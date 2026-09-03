@@ -23,5 +23,9 @@ func init() {
 		AddRoute(
 			router.NewRoute("/messages", http.MethodPost).
 				Handle(relay.Forward(llm.APIFormatAnthropicMessage)),
+		).
+		AddRoute(
+			router.NewRoute("/messages/count_tokens", http.MethodPost).
+				Handle(relay.CountTokens),
 		)
 }
