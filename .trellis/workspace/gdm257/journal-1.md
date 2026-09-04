@@ -69,3 +69,24 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 3: 补录 count_tokens 端点 task
+
+**Date**: 2026-09-05
+**Task**: 补录 count_tokens 端点 task
+**Branch**: `master`
+
+### Summary
+
+为既有 commit 3c885529(feat: add count_tokens endpoint)补建 PRD-only task 09-05-count-tokens-endpoint 并归档: 补写 prd.md 记录需求与 AC, 整理 implement/check jsonl, 跑 internal/relay 测试确认通过; 无代码改动。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3c885529` | (see git log) |
+
+### Status
+
+[OK] **Completed**
