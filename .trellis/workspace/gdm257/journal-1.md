@@ -5,3 +5,34 @@
 
 ---
 
+
+
+## Session 1: 填写项目开发规范 (bootstrap-guidelines)
+
+**Date**: 2026-09-04
+**Task**: 填写项目开发规范 (bootstrap-guidelines)
+**Branch**: `master`
+
+### Summary
+
+扫描代码库提取真实模式, 填充 .trellis/spec/backend 5 个与 frontend 6 个规范文件, 更新 index 与 PRD checklist
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
