@@ -285,8 +285,23 @@ func ChannelGet(id int) (model.Channel, error) {
 	return channel, nil
 }
 
+// ChannelGrantDisabled 判断授权所属渠道是否已被禁用。
+// 仅供选路过滤: 凭据停用与引用缺失仍由转发循环按既有语义等待。
+func ChannelGrantDisabled(id int) bool {
+	grant, ok := channelGrantCache.Get(id)
+	if !ok {
+		return false
+	}
+	channelModel, ok := channelModelCache.Get(grant.ChannelModelID)
+	if !ok {
+		return false
+	}
+	channel, ok := channelCache.Get(channelModel.ChannelID)
+	return ok && !channel.Enabled
+}
+
 // ChannelGrantGet 返回可用于转发的渠道授权, 并补齐其模型与凭据。
-// 凭据被停用, 以及模型, 凭据缺失时一律返回错误, 使调用方拿到的授权必然可直接转发, 无需再逐项检查。
+// 渠道或凭据被停用, 以及模型, 凭据或渠道缺失时一律返回错误, 使调用方拿到的授权必然可直接转发, 无需再逐项检查。
 // 授权本身没有停用状态: 不再授权就删掉该组合, 无需保留一行停用记录。
 func ChannelGrantGet(id int) (model.ChannelGrant, error) {
 	grant, ok := channelGrantCache.Get(id)
@@ -303,6 +318,13 @@ func ChannelGrantGet(id int) (model.ChannelGrant, error) {
 	}
 	if !channelKey.Enabled {
 		return model.ChannelGrant{}, fmt.Errorf("channel key %d is disabled", channelKey.ID)
+	}
+	channel, ok := channelCache.Get(channelModel.ChannelID)
+	if !ok {
+		return model.ChannelGrant{}, fmt.Errorf("channel %d not found", channelModel.ChannelID)
+	}
+	if !channel.Enabled {
+		return model.ChannelGrant{}, fmt.Errorf("channel %d is disabled", channel.ID)
 	}
 	grant.ChannelModel = &channelModel
 	grant.ChannelKey = &channelKey

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"slices"
@@ -94,10 +95,17 @@ func Forward(format llm.APIFormat) gin.HandlerFunc {
 				continue
 			}
 
-			// 手动模式取人工指定的成员, 故障转移模式按优先级选择未禁用且不在冷却中的成员。
-			// 没有目标时等待重新选择, 期间人工切换渠道, 补齐成员或成员冷却到期即可让请求继续。
-			item := pickGroupItem(group)
+			// 手动模式只使用人工指定的成员, 故障转移模式按优先级跳过渠道禁用和冷却中的成员。
+			// 没有目标时保持既有等待语义, 只有全部候选成员均因渠道禁用被过滤才立即终态。
+			skipDisabled := func(item model.GroupItem) bool { return op.ChannelGrantDisabled(item.ChannelGrantID) }
+			item := pickGroupItem(group, skipDisabled)
 			if item.ID == 0 {
+				if allItemsSkipped(group, skipDisabled) {
+					err := fmt.Errorf("model %q unavailable: all channels are disabled", metadata.Model)
+					request.markFailed(err, "", nil)
+					rejectRequest(c, inbound, err)
+					return
+				}
 				if !request.wait(ctx, group.RelayConfig.MemberRetryIntervalSeconds) {
 					return
 				}

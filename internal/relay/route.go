@@ -64,11 +64,11 @@ func ResetRouteState(groupID int) {
 }
 
 // pickGroupItem 按分组模式选择本轮目标成员, 没有可用成员时返回零值; group.Items 已按 Priority 升序排列。
-// 渠道是否可用不在此判断: 渠道禁用或缺少密钥由调用方发现并作为一轮失败上报, 该成员随即进入冷却而在后续轮次被跳过。
-func pickGroupItem(group model.Group) model.GroupItem {
+// skip 过滤本轮不可选的成员, 不影响冷却与缺失引用等由调用方维持的既有等待语义。
+func pickGroupItem(group model.Group, skip func(model.GroupItem) bool) model.GroupItem {
 	if group.Mode == model.GroupModeManual {
 		for _, item := range group.Items {
-			if item.ID == group.ActiveItemID {
+			if item.ID == group.ActiveItemID && !skip(item) {
 				return item
 			}
 		}
@@ -79,6 +79,20 @@ func pickGroupItem(group model.Group) model.GroupItem {
 	defer routeMu.Unlock()
 
 	route := groupRouteLocked(group)
+	changed := false
+	if route.CurrentItemID != 0 && skip(itemOf(group, route.CurrentItemID)) {
+		route.CurrentItemID = 0
+		route.AffinityUntil = 0
+		route.affinityArmed = false
+		changed = true
+	}
+	if route.ProbeItemID != 0 && skip(itemOf(group, route.ProbeItemID)) {
+		route.ProbeItemID = 0
+		changed = true
+	}
+	if changed {
+		publishRouteLocked(route)
+	}
 	now := time.Now().UnixMilli()
 	if route.AffinityUntil <= now {
 		route.AffinityUntil = 0
@@ -86,10 +100,16 @@ func pickGroupItem(group model.Group) model.GroupItem {
 
 	// 亲和期内沿用当前成员, 不提前探测已恢复的高优先级成员。
 	if route.CurrentItemID != 0 && route.AffinityUntil > now {
-		return itemOf(group, route.CurrentItemID)
+		item := itemOf(group, route.CurrentItemID)
+		if item.ID != 0 && !skip(item) {
+			return item
+		}
 	}
 
 	for _, item := range group.Items {
+		if skip(item) {
+			continue
+		}
 		// 遍历到当前成员说明比它优先级更高的成员都不可选, 沿用当前成员。
 		if item.ID == route.CurrentItemID {
 			break
@@ -112,9 +132,33 @@ func pickGroupItem(group model.Group) model.GroupItem {
 		return item
 	}
 	if route.CurrentItemID != 0 {
-		return itemOf(group, route.CurrentItemID)
+		item := itemOf(group, route.CurrentItemID)
+		if item.ID != 0 && !skip(item) {
+			return item
+		}
 	}
 	return model.GroupItem{}
+}
+
+// allItemsSkipped 判断当前选择模式的所有候选成员是否均被 skip 过滤。
+func allItemsSkipped(group model.Group, skip func(model.GroupItem) bool) bool {
+	if group.Mode == model.GroupModeManual {
+		for _, item := range group.Items {
+			if item.ID == group.ActiveItemID {
+				return skip(item)
+			}
+		}
+		return false
+	}
+	if len(group.Items) == 0 {
+		return false
+	}
+	for _, item := range group.Items {
+		if !skip(item) {
+			return false
+		}
+	}
+	return true
 }
 
 // recordRouteSuccess 上报一轮成功: 结束该成员的冷却与探测占用, 并在故障切换后按配置开始亲和。

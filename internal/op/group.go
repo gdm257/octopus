@@ -55,7 +55,7 @@ func GroupListModel() []string {
 
 // GroupGetByName 返回客户端模型名称对应的分组配置, 供转发选路使用。
 // 不补齐成员的展示字段: 转发只需成员主键与顺序, 授权详情由 ChannelGrantGet 按主键单独取,
-// 那里会连带校验凭据启用与两侧存在, 使拿到的授权必然可直接转发。
+// 那里会连带校验渠道启用, 凭据启用与两侧存在, 使拿到的授权必然可直接转发。
 func GroupGetByName(name string) (model.Group, error) {
 	groupID, ok := groupNameIndex.Get(name)
 	if !ok {
