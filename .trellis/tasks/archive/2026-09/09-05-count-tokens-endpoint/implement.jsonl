@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端代码标准与禁用模式, relay 层新增处理器需遵守"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "count_tokens 处理器含 400 错误路径, 需对齐项目错误处理约定"}
