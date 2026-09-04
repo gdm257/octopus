@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "后端规范入口: 开发前检查清单与质量检查入口"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "relay 错误出口必须走 OpenAI/Anthropic 协议错误体而非 resp 信封; 错误文案小写动作式风格"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端代码标准与禁用模式, 新增判定函数与测试须遵循"}
