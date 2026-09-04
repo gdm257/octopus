@@ -23,7 +23,7 @@
 
 ### Git Commits
 
-(No commits - planning session)
+- `06aa695` docs(trellis): fill backend and frontend dev guidelines from codebase patterns
 
 ### Testing
 
